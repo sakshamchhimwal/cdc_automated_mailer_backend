@@ -1,29 +1,24 @@
 package controllers
 
 import (
-	"cdc_mailer/config"
 	"cdc_mailer/models"
 	"cdc_mailer/services"
 	"cdc_mailer/utils"
-	"fmt"
-	"os"
-
 	"github.com/gofiber/fiber/v2"
+	"os"
 )
 
 func AddNewUser(c *fiber.Ctx) error {
 	var adminDetails AdminAddUser
 
 	if bodyError := c.BodyParser(&adminDetails); bodyError != nil {
-		c.JSON(config.ErrorMessage(fiber.StatusBadRequest, "Invalid request body"))
-		return c.SendStatus(fiber.StatusBadRequest)
+		return utils.SetError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
 	defaultPassword, err := utils.HashPassword(os.Getenv("INIT_PASS"))
 
 	if err != nil {
-		c.JSON(config.ErrorMessage(fiber.StatusInternalServerError, "Internal Server Error"))
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return utils.SetError(c, fiber.StatusInternalServerError, "Internal Server Error")
 	}
 
 	newUser := models.User{
@@ -36,11 +31,10 @@ func AddNewUser(c *fiber.Ctx) error {
 	result := services.DB.Create(&newUser)
 
 	if result.Error != nil {
-		c.JSON(config.ErrorMessage(fiber.StatusInternalServerError, "Internal Server Error"))
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return utils.SetError(c, fiber.StatusInternalServerError, "Internal Server Error")
 	}
 
-	c.JSON(fiber.Map{
+	_ = c.JSON(fiber.Map{
 		"status":  fiber.StatusOK,
 		"message": "New user added successfully",
 		"data": fiber.Map{
@@ -51,8 +45,30 @@ func AddNewUser(c *fiber.Ctx) error {
 }
 
 func AddCompanies(c *fiber.Ctx) error {
-	companies := c.BodyRaw()
-	fmt.Println(companies)
 
+	var companyData []models.Company
+
+	if bodyError := c.BodyParser(&companyData); bodyError != nil {
+		return utils.SetError(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	result := services.DB.Create(&companyData)
+
+	if result.Error != nil {
+		return utils.SetError(c, fiber.StatusInternalServerError, "Internal Server Error")
+	}
+
+	var companiesID []uint
+	for _, companies := range companyData {
+		companiesID = append(companiesID, companies.ID)
+	}
+
+	_ = c.JSON(fiber.Map{
+		"status":  fiber.StatusOK,
+		"message": "New companies added successfully",
+		"data": fiber.Map{
+			"companiesId": companiesID,
+		},
+	})
 	return c.SendStatus(fiber.StatusOK)
 }

@@ -22,7 +22,10 @@ func ConnectToDB() {
 	}
 
 	fmt.Println("Connected to DB successfully!!")
-	DB.AutoMigrate(&models.User{})
-	DB.AutoMigrate(&models.Company{})
+	errMigrate := DB.AutoMigrate(&models.User{})
+	if errMigrate != nil {
+		panic("Error in DB migration, Table: User")
+	}
+	_ = DB.AutoMigrate(&models.Company{})
 	fmt.Println("Database has been migrated!!")
 }
