@@ -22,11 +22,9 @@ func Protected() func(*fiber.Ctx) error {
 func jwtError(c *fiber.Ctx, err error) error {
 	fmt.Println(err.Error())
 	if err.Error() == "Missing or malformed JWT" {
-		c.Status(fiber.StatusBadRequest)
-		return c.JSON(utils.ErrorMessage(fiber.StatusUnauthorized, "Missing or malformed JWT"))
+		return utils.SetError(c, fiber.StatusUnauthorized, "Missing or malformed JWT")
 
 	} else {
-		c.Status(fiber.StatusUnauthorized)
-		return c.JSON(utils.ErrorMessage(fiber.StatusUnauthorized, "Invalid or expired JWT"))
+		return utils.SetError(c, fiber.StatusUnauthorized, "Invalid or expired JWT")
 	}
 }

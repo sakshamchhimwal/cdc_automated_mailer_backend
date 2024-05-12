@@ -59,8 +59,9 @@ func AddCompanies(c *fiber.Ctx) error {
 	}
 
 	var companiesID []uint
-	for _, companies := range companyData {
-		companiesID = append(companiesID, companies.ID)
+	for _, currentCompany := range companyData {
+		go services.GenerateTemplates(&currentCompany)
+		companiesID = append(companiesID, currentCompany.ID)
 	}
 
 	_ = c.JSON(fiber.Map{
@@ -70,5 +71,6 @@ func AddCompanies(c *fiber.Ctx) error {
 			"companiesId": companiesID,
 		},
 	})
+
 	return c.SendStatus(fiber.StatusOK)
 }

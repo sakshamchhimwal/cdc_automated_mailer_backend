@@ -23,5 +23,5 @@ func main() {
 	services.ConnectToDB()
 	router.SetupRoutes(app)
 
-	log.Fatal(app.Listen("localhost:3000"))
+	log.Fatal(app.Listen("localhost:3005"))
 }
