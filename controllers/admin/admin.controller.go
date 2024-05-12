@@ -8,6 +8,8 @@ import (
 	"os"
 )
 
+var coolDown = 1
+
 func AddNewUser(c *fiber.Ctx) error {
 	var adminDetails AdminAddUser
 
@@ -60,7 +62,7 @@ func AddCompanies(c *fiber.Ctx) error {
 
 	var companiesID []uint
 	for _, currentCompany := range companyData {
-		go services.GenerateTemplates(&currentCompany)
+		go services.GenerateTemplates(&currentCompany, &coolDown)
 		companiesID = append(companiesID, currentCompany.ID)
 	}
 

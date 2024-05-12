@@ -10,8 +10,10 @@ import (
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
 	"log"
+	"math"
 	"os"
 	"sync"
+	"time"
 )
 
 func scrapeWebPage(url string, dataHolder *string, errorHolder *error, attempts int, waitGrp *sync.WaitGroup) {
@@ -53,7 +55,6 @@ func scrapeWebPage(url string, dataHolder *string, errorHolder *error, attempts 
 }
 
 func getLLMResponse(companyProfile string, templateHolder *string) {
-	// Clean the Data and get company profile.
 	llmContext := context.Background()
 	client, llmError := genai.NewClient(llmContext, option.WithAPIKey(os.Getenv("GEMINI_API_KEY")))
 
@@ -75,7 +76,7 @@ func getLLMResponse(companyProfile string, templateHolder *string) {
 	}
 }
 
-func GenerateTemplates(companyData *models.Company) error {
+func GenerateTemplates(companyData *models.Company, coolDown *int) error {
 	// Get URLs
 	companyCareers := companyData.CompanyCareers
 	companyAbout := companyData.CompanyAbout
@@ -91,25 +92,36 @@ func GenerateTemplates(companyData *models.Company) error {
 	go scrapeWebPage(companyAbout, &scrapedCompanyAbout, &scrapeAboutError, 3, waitGrp)
 	waitGrp.Wait()
 
-	// Log errors
 	if scrapeCareerError != nil {
 		fmt.Println("Scrape failed for URL ", companyCareers, "Error: ", scrapeCareerError)
+		return errors.New("scrape failed")
 	}
 	if scrapeAboutError != nil {
 		fmt.Println("Scrape failed for URL ", companyAbout, "Error: ", scrapeAboutError)
+		return errors.New("scrape failed")
 	}
-
-	_ = os.WriteFile("car.txt", []byte(scrapedCompanyCareers), 0666)
-	_ = os.WriteFile("abt.txt", []byte(scrapedCompanyAbout), 0666)
 
 	var mailTemplate string
 
 	companyProfile := "Company About Us Data \n" + scrapedCompanyAbout + "\nCompany Careers Data\n" + scrapedCompanyCareers
 
-	getLLMResponse(companyProfile, &mailTemplate)
+	for index := 0; index < 3; index++ {
+		time.Sleep(time.Duration(*coolDown) * time.Second)
+		*coolDown += int(math.Min(float64(*coolDown*2)/2, 60))
+		getLLMResponse(companyProfile, &mailTemplate)
+		*coolDown -= *coolDown / 2
+		if index == 0 {
+			companyData.Template1 = mailTemplate
+		} else if index == 1 {
+			companyData.Template2 = mailTemplate
+		} else if index == 2 {
+			companyData.Template3 = mailTemplate
+		}
+	}
 
-	fmt.Println(mailTemplate)
+	DB.Save(&companyData)
+
+	fmt.Println("Mail templates added for ", companyData.CompanyName)
 
 	return nil
-
 }

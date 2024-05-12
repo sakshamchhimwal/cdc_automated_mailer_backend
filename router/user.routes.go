@@ -12,4 +12,6 @@ func SetupRoutesUser(user fiber2.Router) {
 	user.Patch("/companies", userControllers.UpdateUserCompany)
 
 	user.Post("/mail", userControllers.SendMailToCompany)
+
+	user.Patch("/updateTemplate", userControllers.UpdateMailTemplate)
 }

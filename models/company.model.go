@@ -13,6 +13,7 @@ type Company struct {
 	Template3      string `json:"template3"`
 	MailSent       bool   `gorm:"default:false" json:"mailSent"`
 	MailVerified   bool   `gorm:"default:false" json:"mailVerified"`
+	TemplateUsed   uint   `gorm:"default:0" json:"templateUsed"`
 	HandlerID      uint   `json:"handlerID"`                           // this will store the ID of the User
 	Handler        User   `gorm:"foreignKey:HandlerID" json:"handler"` // corrected foreign key definition
 }

@@ -49,7 +49,7 @@ func GetUserCompanies(c *fiber.Ctx) error {
 		return utils.SetError(c, fiber.StatusUnauthorized, "No User Found")
 	}
 
-	result := services.DB.Model(&models.Company{}).Where("ID = ?", userId)
+	result := services.DB.Model(&models.Company{}).Where("HandlerID = ?", userId)
 
 	if result.Error != nil {
 		return utils.SetError(c, fiber.StatusInternalServerError, "Internal Server Error")
@@ -95,6 +95,47 @@ func UpdateUserCompany(c *fiber.Ctx) error {
 	})
 
 	return c.SendStatus(fiber.StatusOK)
+}
+
+func UpdateMailTemplate(c *fiber.Ctx) error {
+	userId := userUtils.GetUserId(c)
+	var companyTemplateUpdateDetails CompanyTemplateUpdateDetails
+
+	bodyError := c.BodyParser(&companyTemplateUpdateDetails)
+	if bodyError != nil {
+		return utils.SetError(c, fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if userUtils.VerifyUser(userId) != nil {
+		return utils.SetError(c, fiber.StatusUnauthorized, "No User Found")
+	}
+
+	findCompany, findCompanyErr := userUtils.VerifyUserCompany(userId, companyTemplateUpdateDetails.CompanyId)
+
+	if findCompanyErr != nil {
+		return utils.SetError(c, fiber.StatusUnauthorized, "No Company Found")
+	}
+
+	if findCompany.MailSent == true {
+		return utils.SetError(c, fiber.StatusForbidden, "Mail already sent")
+	}
+
+	if companyTemplateUpdateDetails.TemplateNumber == 1 {
+		findCompany.Template1 = companyTemplateUpdateDetails.TemplateContent
+	} else if companyTemplateUpdateDetails.TemplateNumber == 2 {
+		findCompany.Template2 = companyTemplateUpdateDetails.TemplateContent
+	} else if companyTemplateUpdateDetails.TemplateNumber == 3 {
+		findCompany.Template3 = companyTemplateUpdateDetails.TemplateContent
+	} else {
+		return utils.SetError(c, fiber.StatusNotFound, "Template does not exist")
+	}
+
+	_ = c.JSON(fiber.Map{
+		"status":  fiber.StatusOK,
+		"message": "Template Update Successful",
+	})
+	return c.SendStatus(fiber.StatusOK)
+
 }
 
 func SendMailToCompany(c *fiber.Ctx) error {

@@ -13,3 +13,9 @@ type CompanyMailingDetails struct {
 	CompanyId      uint
 	TemplateNumber int
 }
+
+type CompanyTemplateUpdateDetails struct {
+	CompanyId       uint
+	TemplateNumber  int
+	TemplateContent string
+}
