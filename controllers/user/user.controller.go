@@ -177,10 +177,13 @@ func SendMailToCompany(c *fiber.Ctx) error {
 		return utils.SetError(c, fiber.StatusForbidden, "Cannot send empty mail")
 	}
 
-	mailError := services.SendMail(companyMailingDetails.CompanyId, mailTemplate, findCompany.HrEmail)
+	mailError := services.SendMail(mailTemplate, findCompany.HrEmail)
 	if mailError != nil {
 		return utils.SetError(c, fiber.StatusInternalServerError, "Internal Server Error")
 	}
+
+	findCompany.MailSent = true
+	services.DB.Save(&findCompany)
 
 	_ = c.JSON(fiber.Map{
 		"status":  fiber.StatusOK,
