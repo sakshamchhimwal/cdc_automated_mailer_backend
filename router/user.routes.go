@@ -9,6 +9,7 @@ func SetupRoutesUser(user fiber2.Router) {
 	user.Post("/updatePassword", userControllers.UpdatePassword)
 
 	user.Get("/companies", userControllers.GetUserCompanies)
+	user.Get("/companies/:id", userControllers.GetUserCompanyDetails)
 	user.Patch("/companies", userControllers.UpdateUserCompany)
 
 	user.Post("/mail", userControllers.SendMailToCompany)

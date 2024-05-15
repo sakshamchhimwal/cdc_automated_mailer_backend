@@ -5,7 +5,9 @@ import (
 	"cdc_mailer/models"
 	"cdc_mailer/services"
 	"cdc_mailer/utils"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
+	"strconv"
 )
 
 func UpdatePassword(c *fiber.Ctx) error {
@@ -32,6 +34,7 @@ func UpdatePassword(c *fiber.Ctx) error {
 	}
 
 	findUser.Password = newHashedPassword
+	findUser.HasSignedUp = true
 
 	services.DB.Save(&findUser)
 
@@ -49,9 +52,11 @@ func GetUserCompanies(c *fiber.Ctx) error {
 		return utils.SetError(c, fiber.StatusUnauthorized, "No User Found")
 	}
 
-	result := services.DB.Model(&models.Company{}).Where("HandlerID = ?", userId)
+	var result []models.Company
 
-	if result.Error != nil {
+	err := services.DB.Model(&models.Company{}).Where("handler_id = ?", userId).Find(&result).Omit()
+
+	if err.Error != nil {
 		return utils.SetError(c, fiber.StatusInternalServerError, "Internal Server Error")
 	}
 
@@ -103,6 +108,7 @@ func UpdateMailTemplate(c *fiber.Ctx) error {
 
 	bodyError := c.BodyParser(&companyTemplateUpdateDetails)
 	if bodyError != nil {
+		fmt.Println(bodyError)
 		return utils.SetError(c, fiber.StatusBadRequest, "Invalid request body")
 	}
 
@@ -130,9 +136,38 @@ func UpdateMailTemplate(c *fiber.Ctx) error {
 		return utils.SetError(c, fiber.StatusNotFound, "Template does not exist")
 	}
 
+	services.DB.Save(&findCompany)
+
 	_ = c.JSON(fiber.Map{
 		"status":  fiber.StatusOK,
 		"message": "Template Update Successful",
+	})
+	return c.SendStatus(fiber.StatusOK)
+
+}
+
+func GetUserCompanyDetails(c *fiber.Ctx) error {
+	userId := userUtils.GetUserId(c)
+	companyId, idErr := strconv.ParseUint(c.Params("id"), 10, 64)
+
+	if idErr != nil {
+		return utils.SetError(c, fiber.StatusBadRequest, "Invalid company ID")
+	}
+
+	if userUtils.VerifyUser(userId) != nil {
+		return utils.SetError(c, fiber.StatusUnauthorized, "No User Found")
+	}
+
+	findCompany, findCompanyErr := userUtils.VerifyUserCompany(userId, uint(companyId))
+
+	if findCompanyErr != nil {
+		return utils.SetError(c, fiber.StatusUnauthorized, "No Company Found")
+	}
+
+	_ = c.JSON(fiber.Map{
+		"status":  fiber.StatusOK,
+		"data":    findCompany,
+		"message": "Company Details Successful",
 	})
 	return c.SendStatus(fiber.StatusOK)
 

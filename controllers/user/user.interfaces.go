@@ -5,17 +5,17 @@ type PasswordInput struct {
 }
 
 type UpdateCompanyInput struct {
-	CompanyId    uint
+	CompanyId    uint `json:"companyId,string,omitempty"`
 	MailVerified bool
 }
 
 type CompanyMailingDetails struct {
-	CompanyId      uint
-	TemplateNumber int
+	CompanyId      uint `json:"companyId,string,omitempty"`
+	TemplateNumber int  `json:"templateNumber,string,omitempty"`
 }
 
 type CompanyTemplateUpdateDetails struct {
-	CompanyId       uint
-	TemplateNumber  int
+	CompanyId       uint `json:"companyId,string,omitempty"`
+	TemplateNumber  int  `json:"templateNumber,string,omitempty"`
 	TemplateContent string
 }

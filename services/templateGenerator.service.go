@@ -56,6 +56,7 @@ func scrapeWebPage(url string, dataHolder *string, errorHolder *error, attempts 
 
 func getLLMResponse(companyProfile string, templateHolder *string) {
 	llmContext := context.Background()
+	*templateHolder = ""
 	client, llmError := genai.NewClient(llmContext, option.WithAPIKey(os.Getenv("GEMINI_API_KEY")))
 
 	if llmError != nil {
@@ -101,13 +102,12 @@ func GenerateTemplates(companyData *models.Company, coolDown *int) error {
 		return errors.New("scrape failed")
 	}
 
-	var mailTemplate string
-
 	companyProfile := "Company About Us Data \n" + scrapedCompanyAbout + "\nCompany Careers Data\n" + scrapedCompanyCareers
 
 	for index := 0; index < 3; index++ {
 		time.Sleep(time.Duration(*coolDown) * time.Second)
 		*coolDown += int(math.Min(float64(*coolDown*2)/2, 60))
+		var mailTemplate string
 		getLLMResponse(companyProfile, &mailTemplate)
 		*coolDown -= *coolDown / 2
 		if index == 0 {
